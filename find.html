@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Donors</title>
+    <link rel="stylesheet" href="find.css">
+</head>
+<body>
+
+    <div class="main-container">
+        <h2>🩸 Available Donors</h2>
+
+        <div class="search-box">
+            <input type="text" id="citySearch" placeholder="Enter City (e.g. Guntur)...">
+            <button onclick="filterDonors()">🔍 Search</button>
+        </div>
+        
+        <div id="donorList" class="donor-grid">
+            <p>Loading donors...</p>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn red" onclick="window.location.href='donate.html'">I want to Donate instead</button>
+            <button class="nav-btn gray" onclick="window.location.href='index.html'">⬅ Back to Home</button>
+        </div>
+    </div>
+
+    <script>
+        let allDonors = []; 
+        async function loadDonors() {
+            const list = document.getElementById('donorList');
+            try {
+                const res = await fetch('http://localhost:3000/donors');
+                allDonors = await res.json(); 
+                displayDonors(allDonors); 
+            } catch (err) { list.innerHTML = "<p>Server offline.</p>"; }
+        }
+
+        function displayDonors(donors) {
+            const list = document.getElementById('donorList');
+            list.innerHTML = ''; 
+            if(donors.length === 0) { list.innerHTML = "<p>No donors found.</p>"; return; }
+
+            donors.forEach(d => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                let certLink = d.CERTIFICATE ? `<a href="http://localhost:3000/uploads/${d.CERTIFICATE}" target="_blank" class="cert-link">📄 View Medical Certificate</a>` : `<span class="no-cert">No Certificate</span>`;
+
+                let mapLink = (d.LATITUDE && d.LONGITUDE) ? 
+                    `<a href="https://www.google.com/maps?q=${d.LATITUDE},${d.LONGITUDE}" target="_blank" class="map-link">🌍 View Location</a>` : 
+                    `<span class="no-loc">🚫 Location not shared</span>`;
+
+                card.innerHTML = `
+                    <div class="card-header"><span class="blood">${d.BLOOD_GROUP}</span><span class="age">${d.AGE} yrs</span></div>
+                    <h3>${d.NAME}</h3>
+                    <p>📍 ${d.CITY}</p>
+                    ${certLink}
+                    ${mapLink}
+                    <a href="tel:${d.PHONE}" class="call-btn">📞 Call Now</a>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function filterDonors() {
+            const term = document.getElementById('citySearch').value.toLowerCase();
+            const filtered = allDonors.filter(d => d.CITY && d.CITY.toLowerCase().includes(term));
+            displayDonors(filtered); 
+        }
+        loadDonors();
+    </script>
+</body>
+</html>
